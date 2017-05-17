@@ -1,0 +1,354 @@
+<!doctype html>
+
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>温差范围统计</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link href="../css/mui.picker.css" rel="stylesheet" />
+		<link href="../css/mui.poppicker.css" rel="stylesheet" />
+		<link href="../css/mui.picker.min.css" rel="stylesheet" type="text/css" />
+
+		<style>
+			.mui-content {
+				padding: 0 30px;
+			}
+			
+			.name {
+				color: #666666;
+				font-size: 15px;
+			}
+			
+			.value {
+				color: #333333;
+				font-size: 15px;
+			}
+			
+			.input-content {
+				border-color: #EEEEEE;
+				border-style: solid;
+				border-width: 1px;
+				border-radius: 5px;
+				margin: 20px 5px;
+				background-color: white;
+			}
+			
+			.mui-input-row {
+				margin: 8px auto;
+			}
+			
+			.mui-input-group {
+				margin-top: 10px;
+			}
+			
+			.mui-input-group:first-child {
+				margin-top: 30px;
+			}
+			
+			.mui-input-group label {
+				width: 30%;
+			}
+			
+			.mui-input-row label~input,
+			.mui-input-row label~select,
+			.mui-input-row label~textarea {
+				position: absolute;
+				width: 70%;
+			}
+			
+			.mui-content-padded {
+				margin-top: 45px;
+			}
+			
+			.mui-btn {
+				font-size: 16px;
+				padding: 8px;
+				margin: 3px;
+			}
+			
+			h5.mui-content-padded {
+				margin-left: 3px;
+				margin-top: 20px !important;
+			}
+			
+			h5.mui-content-padded:first-child {
+				margin-top: 12px !important;
+			}
+			
+			.ui-alert {
+				text-align: center;
+				padding: 20px 10px;
+				font-size: 16px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav" style="background-color: #008FF7;">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" style="color: white;"></a>
+			<h1 class="mui-title" style="color: #FFFFFF;">温差范围统计</h1>
+		</header>
+
+		<div class="mui-content">
+			<div class="input-content">
+				<div class="mui-input-row ">
+					<label class="name">省市：</label>
+					<input class="value" id='selProvince' type="text" readonly="true" class="mui-input" placeholder="请选择省市">
+				</div>
+
+				<HR style="FILTER: alpha(opacity=0,finishopacity=100,style=1)" width="95%" color=#DDDDDD SIZE=1>
+
+				<div class="mui-input-row ">
+					<label class="name">地区：</label>
+					<input class="value" id='selArea' type="text" readonly="true" class="mui-input" placeholder="请选择地区">
+				</div>
+
+				<HR style="FILTER: alpha(opacity=0,finishopacity=100,style=1)" width="95%" color=#DDDDDD SIZE=1>
+
+				<div class="mui-input-row ">
+					<label class="name">机柜：</label>
+					<input class="value" id='selDevice' type="text" readonly="true" class="mui-input" placeholder="请选择机柜">
+				</div>
+
+				<HR style="FILTER: alpha(opacity=0,finishopacity=100,style=1)" width="95%" color=#DDDDDD SIZE=1>
+
+				<div class="mui-input-row ">
+					<label class="name">日期：</label>
+					<input class="value" id='selDate' type="text" readonly="true" class="mui-input" placeholder="请选择日期">
+				</div>
+
+			</div>
+
+			<div class="mui-content-padded">
+				<button id='queryBtn' class="mui-btn mui-btn-block mui-btn-warning">查&nbsp;&nbsp;&nbsp;&nbsp;询</button>
+			</div>
+
+		</div>
+
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/constants.js"></script>
+		<script src="../js/mui.picker.js"></script>
+		<script src="../js/mui.poppicker.js"></script>
+		<script src="../js/mui.picker.min.js"></script>
+
+		<script type="text/javascript">
+			mui.init({
+				swipeBack: false
+			});
+
+			var selProvince = document.getElementById("selProvince");
+			var selArea = document.getElementById("selArea");
+			var selDevice = document.getElementById("selDevice");
+			var selDate = document.getElementById("selDate");
+			var queryBtn = document.getElementById("queryBtn");
+
+			var provinceArray = new Array();
+			var areaArray = new Array();
+			var deviceArray = new Array();
+
+			var provinceStr = "";
+			var areaStr = "";
+			var deviceStr = "";
+			var dateStr = "";
+
+			selProvince.addEventListener("tap", function(event) {
+				queryProvince();
+			});
+
+			selArea.addEventListener("tap", function(event) {
+				queryArea();
+			});
+
+			selDevice.addEventListener("tap", function(event) {
+				queryDevice();
+			});
+
+			selDate.addEventListener("tap", function(event) {
+				showDateDialog();
+			});
+
+			queryBtn.addEventListener("tap", function(event) {
+				gotoNext();
+			});
+
+			// 页面跳转
+			var gotoNext = function() {
+				/*
+				provinceStr = "北京";
+				areaStr = "亦庄";
+				deviceStr = "机柜A2";
+				dateStr = "2017-04-01";
+				*/
+
+				if(provinceStr.length == 0) {
+					mui.toast("请选择省市");
+					return;
+				}
+				if(areaStr.length == 0) {
+					mui.toast("请选择地区");
+					return;
+				}
+				if(deviceStr.length == 0) {
+					mui.toast("请选择机柜");
+					return;
+				}
+				if(dateStr.length == 0) {
+					mui.toast("请选择日期");
+					return;
+				}
+
+				var where = {
+					province: provinceStr,
+					city: areaStr,
+					data_date_fmt: dateStr,
+					device_no: deviceStr
+				};
+
+				mui.openWindow({
+					url: 'wcfwtj2.html',
+					id: Math.random(),
+					preload: true,
+					show: {
+						aniShow: 'pop-in'
+					},
+					extras: {
+						where: where,
+					},
+				})
+			};
+
+			// 查询省市数据
+			var queryProvince = function() {
+				mui.plusReady(function() {
+					plus.nativeUI.showWaiting("正在加载...");
+				});
+
+				mui.getJSON(HOST + 'percent/queryProvince', {}, function(data) {
+					mui.plusReady(function() {
+						plus.nativeUI.closeWaiting();
+					});
+
+					if(data.code == 0) {
+						provinceArray = data.data;
+						var tempProArr = new Array();
+						for(var i = 0; i < provinceArray.length; i++) {
+							var dic = {
+								value: provinceArray[i].province,
+								text: provinceArray[i].province
+							};
+							tempProArr[i] = dic;
+						}
+
+						var picker = new mui.PopPicker();
+						picker.setData(tempProArr);
+						picker.show(function(selectItems) {
+							provinceStr = selectItems[0].text;
+							selProvince.value = provinceStr;
+						});
+
+					} else {
+						mui.toast("查询省市失败：" + data.message);
+					}
+				});
+			};
+
+			// 查询地区数据
+			var queryArea = function() {
+				if(provinceStr.length == 0) {
+					mui.toast("请先选择省市");
+					return;
+				}
+
+				mui.plusReady(function() {
+					plus.nativeUI.showWaiting("正在加载...");
+				});
+
+				mui.getJSON(encodeURI(HOST + 'percent/queryCityByProvince?province=' + provinceStr), {}, function(data) {
+					mui.plusReady(function() {
+						plus.nativeUI.closeWaiting();
+					});
+
+					if(data.code == 0) {
+						areaArray = data.data;
+						var tempAreaArr = new Array();
+						for(var i = 0; i < areaArray.length; i++) {
+							var dic = {
+								value: areaArray[i].city,
+								text: areaArray[i].city
+							};
+							tempAreaArr[i] = dic;
+						}
+
+						var picker = new mui.PopPicker();
+						picker.setData(tempAreaArr);
+						picker.show(function(selectItems) {
+							areaStr = selectItems[0].text;
+							selArea.value = areaStr;
+						});
+
+					} else {
+						mui.toast("查询地区失败：" + data.message);
+					}
+				});
+			};
+
+			// 查询机柜数据
+			var queryDevice = function() {
+				if(provinceStr.length == 0) {
+					mui.toast("请先选择省市");
+					return;
+				}
+				if(areaStr.length == 0) {
+					mui.toast("请先选择地区");
+					return;
+				}
+
+				mui.plusReady(function() {
+					plus.nativeUI.showWaiting("正在加载...");
+				});
+
+				mui.getJSON(encodeURI(HOST + 'percent/queryDeviceByCity?city=' + areaStr), {}, function(data) {
+					mui.plusReady(function() {
+						plus.nativeUI.closeWaiting();
+					});
+
+					if(data.code == 0) {
+						deviceArray = data.data;
+						var tempDeviceArr = new Array();
+						for(var i = 0; i < deviceArray.length; i++) {
+							var dic = {
+								value: deviceArray[i].device_no,
+								text: deviceArray[i].device_no
+							};
+							tempDeviceArr[i] = dic;
+						}
+
+						var picker = new mui.PopPicker();
+						picker.setData(tempDeviceArr);
+						picker.show(function(selectItems) {
+							deviceStr = selectItems[0].text;
+							selDevice.value = deviceStr;
+						});
+
+					} else {
+						mui.toast("查询地区失败：" + data.message);
+					}
+				});
+			};
+
+			var showDateDialog = function() {
+				var picker = new mui.DtPicker({
+					type: "date"
+				});
+				picker.show(function(rs) {
+					dateStr = rs.text;
+					selDate.value = dateStr;
+					picker.dispose();
+				})
+			};
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,446 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>空调冷量分析</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="../css/table.css" />
+
+		<style>
+			.chart {
+				width: 100%;
+				height: 600px;
+				margin-top: 20px;
+				margin-bottom: 20px;
+			}
+			
+			.table {
+				margin: 20px auto;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav" style="background-color: #008FF7;">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" style="color: #FFFFFF;"></a>
+			<h1 class="mui-title" style="color: #FFFFFF;">空调冷量分析</h1>
+		</header>
+
+		<nav class="mui-bar mui-bar-tab">
+			<a class="mui-tab-item mui-active" href="#tabbar-with-chart">
+				<span class="mui-icon mui-icon-settings"></span>
+				<span class="mui-tab-label">图表展示</span>
+			</a>
+			<a class="mui-tab-item" href="#tabbar-with-table">
+				<span class="mui-icon mui-icon-list"></span>
+				<span class="mui-tab-label">表格数据</span>
+			</a>
+		</nav>
+
+		<div class="mui-content">
+			<div id="tabbar-with-chart" class="mui-control-content mui-active">
+				<div class="chart" id="lineChart1"></div>
+
+				<div class="chart" id="lineChart2"></div>
+
+				<div class="chart" id="lineChart3"></div>
+			</div>
+
+			<div id="tabbar-with-table" class="mui-control-content">
+				<table width="95%" class="table" id="table"></table>
+			</div>
+		</div>
+
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/util.js"></script>
+		<script src="../js/echarts-all.js" type="text/javascript" charset="utf-8"></script>
+
+		<script type="text/javascript">
+			mui.init();
+
+			window.onload = function() {
+				requestList();
+			};
+
+			var currentPage = 1; // 当前页码
+			var totalRecord = 0; // 数据总条数
+			var totalPages = 1; // 总页数
+
+			function requestList() {
+				checkNetwork();
+
+				mui.plusReady(function() {
+					plus.nativeUI.showWaiting("正在加载..."); //这里是开始显示原生等待框
+				});
+
+				var self = plus.webview.currentWebview();
+				var where = self.where;
+
+				var httpstr = HOST + 'cool/list?where=' + encodeURIComponent(JSON.stringify(where)) + "&sort=data_time_fmt&order=asc&_search=false&nd=" + (new Date().getTime()) + "&rows=" + PAGE_SIZE + "&page=" + currentPage + "&sidx=&sord=asc";
+				console.log(httpstr);
+
+				mui.ajax(httpstr, {
+					type: 'get',
+					dataType: 'JSON',
+					timeout: 20000,
+					processData: true,
+					headers: {
+						'Content-Type': 'application/json;charset=UTF-8'
+					},
+					success: function(data) {
+						console.log(data);
+						resp = JSON.parse(data);
+
+						responseList(resp);
+
+						mui.plusReady(function() {
+							plus.nativeUI.closeWaiting();
+						});
+
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type + "--" + errorThrown + "--" + JSON.stringify(xhr));
+
+						mui.plusReady(function() {
+							plus.nativeUI.closeWaiting();
+						});
+					}
+				});
+
+			};
+
+			function responseList(resp) {
+				totalRecord = resp.records;
+
+				totalPages = Math.ceil(totalRecord / PAGE_SIZE);
+
+				refreshTableData(resp);
+
+				refreshChartData1(resp);
+
+				refreshChartData2(resp);
+
+				refreshChartData3(resp);
+			};
+
+			function refreshTableData(resp) {
+				var table = document.getElementById("table");
+				// 首先清空下面的所有结点
+				while(table.hasChildNodes()) {
+					table.removeChild(table.firstChild);
+				}
+
+				if(resp.rows.length == 0)
+					return;
+
+				// 添加标题
+				var caption = document.createElement('caption');
+				caption.innerHTML = resp.rows[0].device_id + '  (' + resp.rows[0].data_date_fmt + ")";
+				table.appendChild(caption);
+
+				// 添加表头
+				var th = document.createElement('tr');
+				th.innerHTML = '<th></th><th>记录时间</th><th>送风温度</th><th>回风温度</th><th>风量</th><th>制冷量</th><th>电流</th><th>空调功率</th><th>COP</th>';
+				table.appendChild(th);
+
+				// 开始添加新的节点
+				var fragment = document.createDocumentFragment();
+				for(var i = 1; i < resp.rows.length + 1; i++) {
+					var item = resp.rows[i - 1];
+					var tr = document.createElement('tr');
+					if(i % 2 == 0) {
+						tr.className = 'alter';
+					}
+					tr.innerHTML = '<td>' + i + '</td><td>' + item["data_time_fmt"] + '</td><td>' + item["temp_out"] + '</td><td>' + item["temp_in"] + '</td><td>' + item["wind_q"] + '</td><td>' + item["coolvalue1"] + '</td><td>' + item["cur_a"] + '</td><td>' + item["device_power"] + '</td><td>' + item["device_cop"] + '</td>';
+					fragment.appendChild(tr);
+				}
+				table.appendChild(fragment);
+			};
+
+			function refreshChartData1(resp) {
+				var minTemp = 0;
+
+				var xAxisData = new Array();
+				// 回风温度
+				var tempInData = new Array();
+				// 送风温度
+				var tempOutData = new Array();
+				// 制冷量
+				var coolValueData = new Array();
+
+				for(var i = 0; i < resp.rows.length; i++) {
+					var item = resp.rows[i];
+					xAxisData[i] = item.data_time_fmt;
+					tempInData[i] = item.temp_in;
+					tempOutData[i] = item.temp_out;
+					coolValueData[i] = item.coolvalue1;
+					// TODO
+					minTemp = (minTemp > item.coolvalue1 ? item.coolvalue1 : minTemp);
+				}
+
+				option = {
+					title: {
+						text: '温度与制冷量关系图'
+					},
+					tooltip: {
+						trigger: 'axis',
+						axisPointer: {
+							type: 'cross',
+							crossStyle: {
+								color: '#999'
+							}
+						}
+					},
+					toolbox: {
+						feature: {
+							dataView: {
+								show: true,
+								readOnly: false
+							},
+							magicType: {
+								show: true,
+								type: ['line', 'bar']
+							},
+							restore: {
+								show: true
+							},
+							saveAsImage: {
+								show: true
+							}
+						}
+					},
+					legend: {
+						data: ['回风温度', '送风温度', '制冷量']
+					},
+					dataZoom: {
+						show: true,
+					},
+					xAxis: [{
+						type: 'category',
+						data: xAxisData,
+						axisPointer: {
+							type: 'shadow'
+						}
+					}],
+					yAxis: [{
+							type: 'value',
+							name: '温度',
+							min: Math.ceil(minTemp),
+							max: 55,
+							interval: 10,
+							axisLabel: {
+								formatter: '{value} °C'
+							}
+						},
+						{
+							type: 'value',
+							name: '制冷量',
+							min: 0,
+							max: 200,
+							interval: 20,
+							axisLabel: {
+								formatter: '{value} KW'
+							}
+						}
+					],
+					series: [{
+							name: '回风温度',
+							type: 'line',
+							data: tempInData,
+							itemStyle: {
+								normal: {
+									color: 'darkorange'
+								}
+							}
+						},
+						{
+							name: '送风温度',
+							type: 'line',
+							data: tempOutData,
+							itemStyle: {
+								normal: {
+									color: 'lightseagreen'
+								}
+							}
+						},
+						{
+							name: '制冷量',
+							type: 'bar',
+							data: coolValueData,
+							itemStyle: {
+								normal: {
+									color: 'dodgerblue'
+								}
+							}
+						}
+					]
+				};
+
+				var lineChart = echarts.init(document.getElementById('lineChart1'));
+				lineChart.setOption(option);
+			};
+
+			function refreshChartData2(resp) {
+				var xAxisData = new Array();
+				// 电流
+				var curData = new Array();
+				// 功率
+				var powerData = new Array();
+
+				for(var i = 0; i < resp.rows.length; i++) {
+					var item = resp.rows[i];
+					xAxisData[i] = item.data_time_fmt;
+					curData[i] = item.cur_a;
+					powerData[i] = item.device_power;
+				}
+
+				option = {
+					title: {
+						text: '电流与功率关系图'
+					},
+					tooltip: {
+						trigger: 'axis',
+						axisPointer: {
+							type: 'cross',
+							crossStyle: {
+								color: '#999'
+							}
+						}
+					},
+					toolbox: {
+						feature: {
+							dataView: {
+								show: true,
+								readOnly: false
+							},
+							magicType: {
+								show: true,
+								type: ['line', 'bar']
+							},
+							restore: {
+								show: true
+							},
+							saveAsImage: {
+								show: false
+							}
+						}
+					},
+					dataZoom: {
+						show: true,
+					},
+					legend: {
+						data: ['电流', '功率']
+					},
+					xAxis: [{
+						type: 'category',
+						data: xAxisData,
+						axisPointer: {
+							type: 'shadow'
+						}
+					}],
+					yAxis: [{
+							type: 'value',
+							name: '电流',
+							min: 0,
+							max: 100,
+							interval: 10,
+							axisLabel: {
+								formatter: '{value} A'
+							}
+						},
+						{
+							type: 'value',
+							name: '功率',
+							min: 0,
+							max: 100,
+							interval: 10,
+							axisLabel: {
+								formatter: '{value} KW'
+							}
+						}
+					],
+					series: [{
+							name: '电流',
+							type: 'line',
+							data: curData,
+							itemStyle: {
+								normal: {
+									color: 'darkorange'
+								}
+							}
+						},
+						{
+							name: '功率',
+							type: 'bar',
+							data: powerData,
+							itemStyle: {
+								normal: {
+									color: 'red'
+								}
+							}
+						}
+					]
+				};
+
+				var lineChart = echarts.init(document.getElementById('lineChart2'));
+				lineChart.setOption(option);
+			};
+
+			function refreshChartData3(resp) {
+				var xAxis = new Array();
+				var seriesArr = new Array();
+				for(var j = 0; j < resp.rows.length; j++) {
+					xAxis[j] = resp.rows[j].data_time_fmt;
+					seriesArr[j] = resp.rows[j].device_cop;
+				}
+
+				var option = {
+					title: {
+						text: 'COP图'
+					},
+					tooltip: {
+						trigger: 'axis'
+					},
+					legend: {
+						data: ['COP']
+					},
+					grid: {
+						left: '1%',
+						right: '1%',
+						bottom: '3%',
+						containLabel: true
+					},
+					dataZoom: {
+						show: true,
+					},
+					xAxis: {
+						type: 'category',
+						boundaryGap: false,
+						data: xAxis,
+					},
+					yAxis: {
+						type: 'value',
+						axisLabel: {
+							formatter: '{value}'
+						},
+						splitLine: {
+							show: false
+						}
+					},
+					series: [{
+						name: 'COP',
+						type: 'line',
+						data: seriesArr
+					}]
+				};
+
+				var lineChart = echarts.init(document.getElementById('lineChart3'));
+				lineChart.setOption(option);
+			};
+		</script>
+	</body>
+
+</html>

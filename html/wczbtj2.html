@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>温差占比统计</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="../css/table.css" />
+
+		<style>
+			.table {
+				margin: 20px auto;
+			}
+			
+			.td-blue {
+				color: deepskyblue;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav" style="background-color: #008FF7;">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" style="color: #FFFFFF;"></a>
+			<h1 class="mui-title" style="color: #FFFFFF;">温差占比统计</h1>
+		</header>
+
+		<div class="mui-content">
+			<table width="95%" class="table" id="table"></table>
+		</div>
+
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/util.js"></script>
+		<script type="text/javascript">
+			mui.init();
+
+			window.onload = function() {
+				requestList();
+			};
+
+			var currentPage = 1; // 当前页码
+			var totalRecord = 0; // 数据总条数
+			var totalPages = 1; // 总页数
+
+			function requestList() {
+				checkNetwork();
+
+				mui.plusReady(function() {
+					plus.nativeUI.showWaiting("正在加载...");
+				});
+
+				var self = plus.webview.currentWebview();
+				var where = self.where;
+
+				var httpstr = HOST + 'device/list?where=' + encodeURIComponent(JSON.stringify(where)) + "&_search=false&nd=" + (new Date().getTime()) + "&rows=" + PAGE_SIZE + "&page=" + currentPage + "&sidx=&sord=asc";
+				console.log(httpstr);
+
+				mui.ajax(httpstr, {
+					type: 'get',
+					dataType: 'JSON',
+					timeout: 20000,
+					processData: true,
+					headers: {
+						'Content-Type': 'application/json;charset=UTF-8'
+					},
+					success: function(data) {
+						console.log(data);
+						resp = JSON.parse(data);
+
+						responseList(resp);
+
+						mui.plusReady(function() {
+							plus.nativeUI.closeWaiting();
+						});
+
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type + "--" + errorThrown + "--" + JSON.stringify(xhr));
+
+						mui.plusReady(function() {
+							plus.nativeUI.closeWaiting();
+						});
+					}
+				});
+
+			};
+
+			function responseList(resp) {
+				totalRecord = resp.records;
+
+				totalPages = Math.ceil(totalRecord / PAGE_SIZE);
+
+				refreshTableData(resp);
+			};
+
+			function refreshTableData(resp) {
+				var table = document.getElementById("table");
+				// 首先清空下面的所有结点
+				while(table.hasChildNodes()) {
+					table.removeChild(table.firstChild);
+				}
+
+				if(resp.rows.length == 0)
+					return;
+
+				// 添加表头
+				var th = document.createElement('tr');
+				th.innerHTML = '<th></th><th>传感器</th><th>低于25°C</th><th>25~28°C</th><th>28~30°C</th><th>30~32°C</th><th>32~35°C</th><th>35°C以上</th>';
+				table.appendChild(th);
+
+				// 开始添加新的节点
+				var fragment = document.createDocumentFragment();
+				for(var i = 1; i < resp.rows.length + 1; i++) {
+					var item = resp.rows[i - 1];
+					var tr = document.createElement('tr');
+					tr.innerHTML = '<td>' + i + '</td><td>' + item["sensor_desc"] + '</td>' + getTD(formatValue(item["count_b25"], item["ratio_b25"])) + getTD(formatValue(item["count_g25b28"], item["ratio_g25b28"])) + getTD(formatValue(item["count_g28b30"], item["ratio_g28b30"])) + getTD(formatValue(item["count_g30b32"], item["ratio_g30b32"])) + getTD(formatValue(item["count_g32b35"], item["ratio_g32b35"])) + getTD(formatValue(item["count_g35"], item["ratio_g35"]));
+					fragment.appendChild(tr);
+				}
+				table.appendChild(fragment);
+			};
+
+			function formatValue(count, per) {
+				if(count == 0)
+					return 0;
+
+				return count + ' (' + getPercent(per) + ')';
+			}
+
+			function getPercent(value) {
+				return parseFloat(value * 100.0).toFixed(2) + '%';
+			}
+
+			function getTD(value) {
+				var html = "";
+				if(value == 0) {
+					html = '<td>' + value + '</td>';
+				} else {
+					html = '<td class="td-blue">' + value + '</td>';
+				}
+
+				return html;
+			}
+		</script>
+	</body>
+
+</html>

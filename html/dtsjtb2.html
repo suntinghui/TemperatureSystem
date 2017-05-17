@@ -1,0 +1,293 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>当天数据图表</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="../css/table.css" />
+
+		<style>
+			body {
+				width: 100%;
+				height: 100%;
+				background-color: white;
+			}
+			
+			.footer-page {
+				position: relative;
+				bottom: 12px;
+			}
+			
+			.mui-popover {
+				height: 300px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav" style="background-color: #008FF7;">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" style="color: #FFFFFF;"></a>
+			<h1 class="mui-title" style="color: #FFFFFF;">当天数据图表</h1>
+		</header>
+
+		<footer class="mui-bar mui-bar-footer" id="footer">
+			<div class="mui-content-padded footer-page">
+				<ul class="mui-pager">
+					<li class="mui-previous">
+						<a href="javascript:void(0)" id="prePage">
+							上一页
+						</a>
+					</li>
+					<li class="mui-content-padded">
+						<a href="#selectPagePopover" style="color: #666666;" id="selectPage">
+							1/1
+						</a>
+					</li>
+					<li class="mui-next">
+						<a href="javascript:void(0)" id="nextPage">
+							下一页
+						</a>
+					</li>
+				</ul>
+			</div>
+		</footer>
+
+		<div class="mui-content">
+			<!-- 选择页码-->
+			<div id="selectPagePopover" class="mui-popover">
+				<div class="mui-popover-arrow"></div>
+				<div class="mui-scroll-wrapper">
+					<div class="mui-scroll">
+						<ul class="mui-table-view" id="selectPageUL">
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			<div>
+				<div class="chart" id="lineChart" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+
+				<table width="90%" class="table" id="table" style="margin-bottom: 20px;"></table>
+			</div>
+
+		</div>
+
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/util.js"></script>
+		<script src="../js/echarts-all.js" type="text/javascript" charset="utf-8"></script>
+
+		<script type="text/javascript">
+			mui.init();
+
+			window.onload = function() {
+				requestList();
+			};
+
+			var currentPage = 1; // 当前页码
+			var totalRecord = 0; // 数据总条数
+			var totalPages = 1; // 总页数
+
+			function requestList() {
+				checkNetwork();
+
+				mui.plusReady(function() {
+					plus.nativeUI.showWaiting("正在加载..."); //这里是开始显示原生等待框
+				});
+
+				var self = plus.webview.currentWebview();
+				var where = self.where;
+
+				var httpstr = HOST + 'racktemp/list?where=' + encodeURIComponent(JSON.stringify(where)) + "&sort=data_time_fmt&order=asc&_search=false&nd=" + (new Date().getTime()) + "&rows=" + PAGE_SIZE + "&page=" + currentPage + "&sidx=&sord=asc";
+				console.log(httpstr);
+
+				mui.ajax(httpstr, {
+					type: 'get',
+					dataType: 'JSON',
+					timeout: 20000,
+					processData: true,
+					headers: {
+						'Content-Type': 'application/json;charset=UTF-8'
+					},
+					success: function(data) {
+						console.log(data);
+						resp = JSON.parse(data);
+
+						responseList(resp);
+
+						mui.plusReady(function() {
+							plus.nativeUI.closeWaiting();
+						});
+
+						mui.scrollTo(0, 50); // 1秒钟内滚动到顶部
+
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(type + "--" + errorThrown + "--" + JSON.stringify(xhr));
+
+						mui.plusReady(function() {
+							plus.nativeUI.closeWaiting();
+						});
+					}
+				});
+
+			};
+
+			function responseList(resp) {
+				totalRecord = resp.records;
+
+				totalPages = Math.ceil(totalRecord / PAGE_SIZE);
+
+				initSelectPage(resp.rows.length);
+
+				refreshTableData(resp);
+
+				refreshChartData(resp)
+			};
+
+			function initSelectPage(count) {
+				if(count == 0) {
+					document.getElementById('footer').style.visibility = 'hidden';
+					return;
+				}
+
+				document.getElementById('footer').style.visibility = 'visible';
+				document.getElementById("selectPage").innerText = currentPage + "/" + totalPages;
+
+				var selectPageUL = document.getElementById("selectPageUL");
+				while(selectPageUL.hasChildNodes()) {
+					selectPageUL.removeChild(selectPageUL.firstChild);
+				}
+
+				var fragment = document.createDocumentFragment();
+				for(var i = 1; i <= totalPages; i++) {
+					var li = document.createElement('li');
+					li.className = 'mui-table-view-cell';
+					li.id = i + "";
+					li.innerHTML = '<a href="javascript:void(0)" id="' + i + '">第' + i + '页</a>';
+					fragment.appendChild(li);
+				}
+				selectPageUL.appendChild(fragment);
+			};
+
+			function refreshTableData(resp) {
+				var table = document.getElementById("table");
+				// 首先清空下面的所有结点
+				while(table.hasChildNodes()) {
+					table.removeChild(table.firstChild);
+				}
+
+				if(resp.rows.length == 0)
+					return;
+
+				// 添加表头
+				var th = document.createElement('tr');
+				th.innerHTML = '<th></th><th>采集时间</th><th>热上层</th><th>热中层</th><th>热下层</th><th>冷上层</th><th>冷中层</th><th>冷下层</th>';
+				table.appendChild(th);
+
+				// 开始添加新的节点
+				var fragment = document.createDocumentFragment();
+				for(var i = 1; i < resp.rows.length + 1; i++) {
+					var item = resp.rows[i - 1];
+					var tr = document.createElement('tr');
+					if(i % 2 == 0) {
+						tr.className = 'alter';
+					}
+					tr.innerHTML = '<td>' + i + '</td><td>' + item["data_time_fmt"] + '</td><td>' + item["temp_hu"] + '</td><td>' + item["temp_hm"] + '</td><td>' + item["temp_hd"] + '</td><td>' + item["temp_cu"] + '</td><td>' + item["temp_cm"] + '</td><td>' + item["temp_cd"] + '</td>';
+					fragment.appendChild(tr);
+				}
+				table.appendChild(fragment);
+			};
+
+			function refreshChartData(resp) {
+				var typeName = ['热上层', '热中层', '热下层', '冷上层', '冷中层', '冷下层'];
+				var typeProperty = ['temp_hu', 'temp_hm', 'temp_hd', 'temp_cu', 'temp_cm', 'temp_cd'];
+
+				var xAxis = new Array(); // x轴值
+
+				var series = new Array();
+				for(var i = 0; i < typeName.length; i++) {
+
+					var seriesArr = new Array();
+					for(var j = 0; j < resp.rows.length; j++) {
+						xAxis[j] = resp.rows[j].data_time_fmt;
+						seriesArr[j] = (resp.rows[j])[(typeProperty[i])]
+					}
+
+					series[i] = {
+						name: typeName[i],
+						type: 'line',
+						data: seriesArr
+					};
+				}
+
+				var option = {
+					tooltip: {
+						trigger: 'axis'
+					},
+					legend: {
+						data: typeName
+					},
+					grid: {
+						left: '1%',
+						right: '1%',
+						bottom: '3%',
+						containLabel: true
+					},
+					xAxis: {
+						type: 'category',
+						boundaryGap: false,
+						data: xAxis,
+					},
+					yAxis: {
+						type: 'value',
+						axisLabel: {
+							formatter: '{value} °C'
+						},
+						splitLine: {
+							show: false
+						}
+					},
+					series: series
+				};
+
+				var lineChart = echarts.init(document.getElementById('lineChart'));
+				lineChart.setOption(option);
+			};
+
+			mui('#selectPageUL').on('tap', 'li', function(e) {
+				mui('#selectPagePopover').popover('hide');
+
+				var id = this.getAttribute("id");
+				if(currentPage == id)
+					return;
+
+				currentPage = id;
+				requestList();
+			});
+
+			document.getElementById("prePage").addEventListener('tap', function(event) {
+				if(currentPage == 1) {
+					mui.toast("当前已是首页");
+					return;
+				}
+
+				currentPage--;
+				requestList();
+			});
+
+			document.getElementById("nextPage").addEventListener('tap', function(event) {
+				if(currentPage == totalPages) {
+					mui.toast("当前已是尾页");
+					return;
+				}
+
+				currentPage++;
+				requestList();
+			});
+		</script>
+	</body>
+
+</html>

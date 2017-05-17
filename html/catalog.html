@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>机房温度智能分析平台</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+
+		<style>
+			.img {
+				width: 50%;
+				height: 50%;
+			}
+		</style>
+
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav" style="background-color: #008FF7;">
+			<h1 class="mui-title" style="color: #FFFFFF;">机房温度智能分析平台</h1>
+		</header>
+
+		<div class="mui-content">
+			<ul class="mui-table-view mui-grid-view mui-grid-9">
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="dtsjtb1.html">
+						<img src="../img/main_1.png" class="img" />
+						<div class="mui-media-body">当天数据图表</div>
+					</a>
+				</li>
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="wdqjtj1.html">
+						<img src="../img/main_2.png" class="img" />
+						<div class="mui-media-body">温度区间统计</div>
+					</a>
+				</li>
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="plfz1.html">
+						<img src="../img/main_3.png" class="img" />
+						<div class="mui-media-body">频率阀值</div>
+					</a>
+				</li>
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="xgx1.html">
+						<img src="../img/main_4.png" class="img" />
+						<div class="mui-media-body">相关性</div>
+					</a>
+				</li>
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="todoread_catalog.html">
+						<img src="../img/main_5.png" class="img" />
+						<div class="mui-media-body">机架冷量分析</div>
+					</a>
+				</li>
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="jjlrzttj1.html">
+						<img src="../img/main_6.png" class="img" />
+						<div class="mui-media-body">机架冷热状态统计</div>
+					</a>
+				</li>
+
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="wczbtj1.html">
+						<img src="../img/main_7.png" class="img" />
+						<div class="mui-media-body">温差占比统计</div>
+					</a>
+				</li>
+
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="wcfwtj1.html">
+						<img src="../img/main_8.png" class="img" />
+						<div class="mui-media-body">温差范围统计</div>
+					</a>
+				</li>
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="ktllfx1.html">
+						<img src="../img/main_9.png" class="img" />
+						<div class="mui-media-body">空调冷量分析</div>
+					</a>
+				</li>
+			</ul>
+		</div>
+
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/util.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
+
+		<script>
+			mui.init({
+				keyEventBind: {
+					backbutton: false //关闭back按键监听
+				}
+			});
+
+			// 宫格点击事件
+			mui('.mui-grid-view').on('tap', 'a', function(e) {
+				var id = this.getAttribute("id");
+				if(id == null) {
+					mui.toast("建设中，请稍候...");
+					return;
+				}
+
+				mui.openWindow({
+					url: id,
+					id: id,
+					preload: true,
+					show: {
+						aniShow: 'pop-in'
+					},
+				});
+			});
+		</script>
+
+	</body>
+
+</html>
