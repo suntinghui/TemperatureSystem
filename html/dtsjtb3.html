@@ -100,7 +100,7 @@
 
 					},
 					error: function(xhr, type, errorThrown) {
-						console.log(type + "--" + errorThrown + "--" + JSON.stringify(xhr));
+						mui.alert(getHttpErrorDesp(type), "提示", null);
 
 						mui.plusReady(function() {
 							plus.nativeUI.closeWaiting();

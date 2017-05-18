@@ -38,10 +38,6 @@ function backAction() {
 }
 
 function getHttpErrorDesp(type) {
-	//	mui.plusReady(function() {
-	//		plus.nativeUI.closeWaiting(); 
-	//	});
-
 	var desp = '未知异常,请重试';
 	if(type == 'timeout') {
 		desp = '网络请求超进,请重试';

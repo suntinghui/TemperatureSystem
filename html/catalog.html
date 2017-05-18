@@ -79,6 +79,12 @@
 						<div class="mui-media-body">空调冷量分析</div>
 					</a>
 				</li>
+				<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+					<a href="javascript:void(0)" id="ktzllfx1.html">
+						<img src="../img/main_10.png" class="img" />
+						<div class="mui-media-body">空调制冷量分析</div>
+					</a>
+				</li>
 			</ul>
 		</div>
 
@@ -96,6 +102,7 @@
 			// 宫格点击事件
 			mui('.mui-grid-view').on('tap', 'a', function(e) {
 				var id = this.getAttribute("id");
+
 				if(id == null) {
 					mui.toast("建设中，请稍候...");
 					return;

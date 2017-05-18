@@ -80,7 +80,7 @@
 
 					},
 					error: function(xhr, type, errorThrown) {
-						console.log(type + "--" + errorThrown + "--" + JSON.stringify(xhr));
+						mui.alert(getHttpErrorDesp(type), "提示", null);
 
 						mui.plusReady(function() {
 							plus.nativeUI.closeWaiting();
@@ -108,7 +108,7 @@
 					var data = resp.data[lineType[x]];
 
 					if(data.length == 0)
-						return;
+						break;
 
 					var xAxis = new Array();
 					var series = new Array();
