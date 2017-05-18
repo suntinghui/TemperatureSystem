@@ -161,7 +161,7 @@
 			};
 
 			function refreshChartData1(resp) {
-				var minTemp = 0;
+				var minCool = 0;
 
 				var xAxisData = new Array();
 				// 回风温度
@@ -178,7 +178,7 @@
 					tempOutData[i] = item.temp_out;
 					coolValueData[i] = item.coolvalue1;
 					// TODO
-					minTemp = (minTemp > item.coolvalue1 ? item.coolvalue1 : minTemp);
+					minCool = (minCool > item.coolvalue1 ? item.coolvalue1 : minCool);
 				}
 
 				option = {
@@ -228,7 +228,7 @@
 					yAxis: [{
 							type: 'value',
 							name: '温度',
-							min: Math.ceil(minTemp),
+							min: 0,
 							max: 55,
 							interval: 10,
 							axisLabel: {
@@ -238,7 +238,7 @@
 						{
 							type: 'value',
 							name: '制冷量',
-							min: 0,
+							min: Math.ceil(minCool),
 							max: 200,
 							interval: 20,
 							axisLabel: {
