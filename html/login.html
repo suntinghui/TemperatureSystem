@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>机房温度智能分析平台</title>
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="../css/logig_style1.css" />
+		<link rel="stylesheet" type="text/css" href="../css/logig_style2.css" />
+		<link rel="stylesheet" type="text/css" href="../css/animate-custom.css" />
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav" style="background-color: #008FF7;">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" style="color: #FFFFFF;"></a>
+			<h1 class="mui-title" style="color: #FFFFFF;">登录</h1>
+		</header>
+
+		<div class="mui-content">
+			<section>
+				<div id="container_demo">
+					<div id="wrapper">
+						<div id="login" class="animate form" style="padding-bottom: 20px; margin-top: 30%;">
+							<p>
+								<label for="username" class="uname" data-icon="u">&nbsp;用户名&nbsp;</label>
+								<input id="username" value="datareport" name="username" required="required" type="text" placeholder="请输入用户名" />
+							</p>
+							<p>
+								<label for="password" class="youpasswd" data-icon="p">&nbsp;密&nbsp;码&nbsp;</label>
+								<input id="password" value="datareport" name="password" required="required" type="password" placeholder="请输入密码" />
+							</p>
+
+							<div style="display: inline-block;">
+								<p>
+									<label for="imgCode" class="youpasswd" data-icon="p">&nbsp;验证码&nbsp;</label>
+									<input id="imgCode" name="imgCode" required="required" type="text" placeholder="请输入验证码" />
+								</p>
+							</div>
+
+							<img src="../img/captcha.jpeg" alt="没有网络" id="captchaImg" onclick="requestImgCode();" style="position: absolute; right: 30px; margin-top: 25px;">
+
+							<p class="login button" style="margin-top: 30px;">
+								<input type="button" value="Login" id="loginBtn" />
+							</p>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/util.js"></script>
+		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
+
+		<script>
+			mui.init();
+
+			var username = document.getElementById('username');
+			var password = document.getElementById('password');
+			var imgCode = document.getElementById('imgCode');
+			var loginBtn = document.getElementById('loginBtn');
+
+			window.onload = function() {
+				requestImgCode();
+			};
+
+			loginBtn.addEventListener('tap', function() {
+				if(!checkInput())
+					return;
+
+				requestLogin();
+
+			}, false);
+
+			function checkInput() {
+				if(username.value.length == 0) {
+					mui.toast('请输入用户名');
+					return false;
+				}
+
+				if(password.value.length == 0) {
+					mui.toast('请输入密码');
+					return false;
+				}
+
+				if(imgCode.value.length == 0) {
+					mui.toast('请输入验证码');
+					return false;
+				}
+
+				return true;
+			}
+
+			function requestImgCode() {
+				var url = HOST + 'captcha?v=' + Math.random();
+				document.getElementById('captchaImg').src = url;
+
+				imgCode.value = '';
+			};
+
+			function requestLogin() {
+
+				mui.plusReady(function() {
+					plus.nativeUI.showWaiting('正在登录...');
+				});
+
+				var httpstr = HOST + 'login?jstime=' + new Date().getTime();
+				console.log(httpstr);
+
+				try {
+					mui.post(httpstr, {
+						account: username.value,
+						password: password.value,
+						imgCode: imgCode.value
+
+					}, function(data) {
+						console.log('登录' + JSON.stringify(data));
+
+						responseLogin(data);
+
+					}, 'json');
+
+				} catch(e) {
+					console.log(e);
+				} finally {
+					mui.plusReady(function() {
+						plus.nativeUI.closeWaiting();
+					});
+				}
+			}
+
+			function responseLogin(resp) {
+				imgCode.value = '';
+
+				if(resp.code == 0) {
+					mui.openWindow({
+						url: 'catalog.html',
+						id: 'catalog',
+						preload: false,
+						show: {
+							aniShow: 'pop-in'
+						},
+					});
+
+				} else {
+					requestImgCode();
+
+					mui.alert(resp.message, "提示", null);
+				}
+			}
+		</script>
+
+	</body>
+
+</html>

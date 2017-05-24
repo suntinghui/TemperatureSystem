@@ -56,7 +56,7 @@
 		<script src="../js/mui.min.js"></script>
 		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" src="../js/util.js"></script>
-		<script src="../js/echarts-all.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/echarts.min.js" type="text/javascript" charset="utf-8"></script>
 
 		<script type="text/javascript">
 			mui.init();
@@ -154,11 +154,19 @@
 					if(i % 2 == 0) {
 						tr.className = 'alter';
 					}
-					tr.innerHTML = '<td>' + i + '</td><td>' + item["data_time_fmt"] + '</td><td>' + item["temp_out"] + '</td><td>' + item["temp_in"] + '</td><td>' + item["wind_q"] + '</td><td>' + item["coolvalue1"] + '</td><td>' + item["cur_a"] + '</td><td>' + item["device_power"] + '</td><td>' + item["device_cop"] + '</td>';
+					tr.innerHTML = '<td>' + i + '</td><td>' + getTD(item["data_time_fmt"]) + '</td><td>' + getTD(item["temp_out"]) + '</td><td>' + getTD(item["temp_in"]) + '</td><td>' + getTD(item["wind_q"]) + '</td><td>' + getTD(item["coolvalue1"]) + '</td><td>' + getTD(item["cur_a"]) + '</td><td>' + getTD(item["device_power"]) + '</td><td>' + getTD(item["device_cop"]) + '</td>';
 					fragment.appendChild(tr);
 				}
 				table.appendChild(fragment);
 			};
+
+			function getTD(value) {
+				if(typeof(value) == "undefined") {
+					value = '无';
+				}
+
+				return value;
+			}
 
 			function refreshChartData1(resp) {
 				var minCool = 0;
@@ -409,8 +417,7 @@
 					},
 					grid: {
 						left: '1%',
-						right: '1%',
-						bottom: '3%',
+						right: '3%',
 						containLabel: true
 					},
 					dataZoom: {

@@ -34,7 +34,7 @@
 		<script src="../js/mui.min.js"></script>
 		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" src="../js/util.js"></script>
-		<script src="../js/echarts-all.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/echarts.min.js" type="text/javascript" charset="utf-8"></script>
 
 		<script type="text/javascript">
 			mui.init();
@@ -62,7 +62,6 @@
 				var where = self.where;
 
 				var httpstr = HOST + 'airconditioner/listCool?province=' + where['province'] + '&city=' + where['city'] + '&data_date_fmt=' + where["data_date_fmt"] + '&device_no=' + where['device_no'];
-				console.log(httpstr);
 
 				mui.ajax(httpstr, {
 					type: 'get',
@@ -73,7 +72,7 @@
 						'Content-Type': 'application/json;charset=UTF-8'
 					},
 					success: function(data) {
-						console.log(data);
+						//console.log(data);
 						resp = JSON.parse(data);
 
 						responseList(resp);
@@ -97,92 +96,116 @@
 
 				refreshChartData(resp);
 
-				mui.plusReady(function() {
-					plus.nativeUI.closeWaiting();
-				});
 			};
 
 			function refreshChartData(resp) {
-				var color = ['dodgerblue', 'deepskyblue', 'seagreen', 'lightseagreen', 'orange', 'darkorange', 'red'];
-				var title = ['回风温度', '送风温度', '电流', '送风回风温度差', '功率', 'COP', '制冷量'];
-				var lineType = ['date1', 'date2', 'date3', 'date4', 'date5', 'date6', 'date7'];
-				var typeName = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-				var typeProperty = ['temp_in', 'temp_out', 'cur_a', 'wcdata', 'device_power', 'device_cop', 'coolvalue1'];
+				try {
+					var color = ['dodgerblue', 'deepskyblue', 'seagreen', 'lightseagreen', 'orange', 'darkorange', 'red'];
+					var title = ['回风温度', '送风温度', '电流', '送风回风温度差', '功率', 'COP', '制冷量'];
+					var lineType = ['date1', 'date2', 'date3', 'date4', 'date5', 'date6', 'date7'];
+					var typeName = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+					var typeProperty = ['temp_in', 'temp_out', 'cur_a', 'wcdata', 'device_power', 'device_cop', 'coolvalue1'];
 
-				var forcount = 0;
-
-				for(var x = 0; x < lineType.length; x++) {
-					var data = resp.data[lineType[x]];
-
-					console.log(data.length);
-
-					var xAxis = new Array();
-					var series = new Array();
-					for(var i = 0; i < typeName.length; i++) {
-						var seriesArr = new Array();
-
-						for(var j = 0; j < data.length; j++) {
-							xAxis[j] = data[j].datevalue;
-							seriesArr[j] = (data[j])[(typeProperty[i])]
-
-							forcount++;
+					// 初如化二维数组
+					var impdata = new Array();
+					for(var i = 0; i < title.length; i++) {
+						impdata[i] = new Array();
+						for(var j = 0; j < typeName.length; j++) {
+							impdata[i][j] = [];
 						}
-
-						series[i] = {
-							name: typeName[i],
-							type: 'line',
-							data: seriesArr,
-							itemStyle: {
-								normal: {
-									color: color[i]
-								}
-							}
-						};
 					}
 
-					var option = {
-						title: {
-							text: title[x]
-						},
-						tooltip: {
-							trigger: 'axis'
-						},
-						legend: {
-							data: typeName
-						},
-						dataZoom: {
-							show: true,
-						},
-						xAxis: {
-							type: 'category',
-							boundaryGap: false,
-							data: xAxis,
-							min: 0,
-							max: 24,
-							interval: 1,
-							axisPointer: {
-								type: 'shadow'
-							}
-						},
-						yAxis: {
-							type: 'value',
-							axisLabel: {
-								formatter: '{value}'
-							}
-						},
-						series: series
-					};
+					for(var i = 0; i < typeName.length; i++) {
+						var data = resp.data[lineType[i]];
+						console.log(data.length);
+						if(data.length == 0)
+							continue;
 
-					var muiContent = document.getElementById("muiContent");
-					var div = document.createElement('div');
-					div.className = 'chart';
-					muiContent.appendChild(div);
+						for(var j = 0; j < data.length; j++) {
+							for(var k = 0; k < title.length; k++) {
+								impdata[k][i].push({
+									name: Math.random(),
+									value: [data[j].datevalue, data[j][typeProperty[k]]]
+								});
 
-					var lineChart = echarts.init(div);
-					lineChart.setOption(option);
+							}
+
+						}
+					}
+
+					for(var x = 0; x < title.length; x++) {
+						var series = new Array();
+
+						for(var y = 0; y < typeName.length; y++) {
+							series[y] = {
+								name: typeName[y],
+								type: 'line',
+								data: impdata[x][y],
+								itemStyle: {
+									normal: {
+										color: color[y]
+									}
+								}
+							};
+
+						}
+
+						var option = {
+							title: {
+								text: title[x]
+							},
+							tooltip: {
+								trigger: 'axis',
+
+							},
+							legend: {
+								data: typeName
+							},
+							dataZoom: {
+								show: true,
+							},
+							grid: {
+								left: '1%',
+								right: '3%',
+								containLabel: true
+							},
+							xAxis: {
+								name: '时',
+								type: 'value',
+								min: 0,
+								max: 24,
+								splitNumber: 12,
+								splitLine: {
+									show: true
+								}
+							},
+							yAxis: {
+								type: 'value',
+								axisLabel: {
+									formatter: '{value}'
+								}
+							},
+							series: series
+						};
+
+						var muiContent = document.getElementById("muiContent");
+						var div = document.createElement('div');
+						div.className = 'chart';
+						muiContent.appendChild(div);
+
+						var lineChart = echarts.init(div);
+						lineChart.setOption(option);
+
+					}
+				} catch(e) {
+					console.log(e);
+
+				} finally {
+					mui.plusReady(function() {
+						plus.nativeUI.closeWaiting();
+					});
 				}
 
-				console.log('一共循环：' + forcount);
 			};
 		</script>
 	</body>

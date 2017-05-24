@@ -34,7 +34,7 @@
 		<script src="../js/mui.min.js"></script>
 		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" src="../js/util.js"></script>
-		<script src="../js/echarts-all.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/echarts.min.js" type="text/javascript" charset="utf-8"></script>
 
 		<script type="text/javascript">
 			mui.init();
@@ -108,7 +108,7 @@
 					var data = resp.data[lineType[x]];
 
 					if(data.length == 0)
-						break;
+						continue;
 
 					var xAxis = new Array();
 					var series = new Array();
