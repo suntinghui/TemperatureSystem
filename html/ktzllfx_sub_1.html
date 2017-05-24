@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<style>
+			html,
+			body {
+				background-color: #efeff4;
+			}
+			
+			.chart {
+				width: 100%;
+				height: 580px;
+				margin-top: 20px;
+				margin-bottom: 20px;
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<div class="mui-content mui-scroll-wrapper">
+			<div class="mui-scroll" id="muiContent">
+
+			</div>
+		</div>
+
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/util.js"></script>
+		<script src="../js/echarts.min.js" type="text/javascript" charset="utf-8"></script>
+
+		<script type="text/javascript">
+			mui.init({
+				swipeBack: false,
+				keyEventBind: {
+					backbutton: false //关闭back按键监听
+				}
+			});
+
+			mui.plusReady(function() {
+				refreshChartData();
+			});
+
+			function refreshChartData() {
+				var color = ['dodgerblue', 'deepskyblue', 'seagreen', 'lightseagreen', 'orange', 'darkorange', 'red'];
+				var lineType = ['date1', 'date2', 'date3', 'date4', 'date5', 'date6', 'date7'];
+				var typeName = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+				var self = plus.webview.currentWebview();
+				var title = self.title;
+				var impdata = self.data;
+
+				var series = new Array();
+
+				for(var y = 0; y < typeName.length; y++) {
+					series[y] = {
+						name: typeName[y],
+						type: 'line',
+						data: impdata[y],
+						itemStyle: {
+							normal: {
+								color: color[y]
+							}
+						}
+					};
+
+				}
+
+				var option = {
+					title: {
+						text: title
+					},
+					tooltip: {
+						trigger: 'axis',
+
+					},
+					legend: {
+						data: typeName
+					},
+					dataZoom: {
+						show: true,
+					},
+					grid: {
+						left: '1%',
+						right: '3%',
+						containLabel: true
+					},
+					xAxis: {
+						name: '时',
+						type: 'value',
+						min: 0,
+						max: 24,
+						splitNumber: 12,
+						splitLine: {
+							show: true
+						}
+					},
+					yAxis: {
+						type: 'value',
+						axisLabel: {
+							formatter: '{value}'
+						}
+					},
+					series: series
+				};
+
+				var muiContent = document.getElementById("muiContent");
+				var div = document.createElement('div');
+				div.className = 'chart';
+				muiContent.appendChild(div);
+
+				var lineChart = echarts.init(div);
+				lineChart.setOption(option);
+			};
+		</script>
+	</body>
+
+</html>

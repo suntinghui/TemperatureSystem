@@ -111,6 +111,10 @@
 					backbutton: false //关闭back按键监听
 				}
 			});
+			
+			mui.plusReady(function(){
+				plus.screen.lockOrientation('landscape');
+			});
 
 			document.getElementById('login').addEventListener('tap', function() {
 				mui.openWindow({

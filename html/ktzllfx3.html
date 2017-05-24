@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>空调制冷量分析</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="../css/table.css" />
+
+		<style>
+			html,
+			body {
+				background-color: #efeff4;
+			}
+			
+			.mui-bar~.mui-content .mui-fullscreen {
+				top: 44px;
+				height: auto;
+			}
+			
+			.chart {
+				width: 100%;
+				height: 580px;
+				margin-top: 20px;
+				margin-bottom: 20px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav" style="background-color: #008FF7;">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left" style="color: #FFFFFF;"></a>
+			<h1 class="mui-title" style="color: #FFFFFF;">空调制冷量分析</h1>
+		</header>
+
+		<div class="mui-content" id="muiContent">
+			<div id="slider" class="mui-slider mui-fullscreen">
+				<div id="sliderSegmentedControl" class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted">
+					<div class="mui-scroll" id="topbar" style="width: 100%;">
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/constants.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/util.js"></script>
+		<script src="../js/echarts.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/webviewGroup.js" type="text/javascript" charset="utf-8"></script>
+
+		<script type="text/javascript">
+			var title = ['回风温度', '送风温度', '电流', '送风回风温度差', '功率', 'COP', '制冷量'];
+			var typeProperty = ['temp_in', 'temp_out', 'cur_a', 'wcdata', 'device_power', 'device_cop', 'coolvalue1'];
+			var typeName = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+			var lineType = ['date1', 'date2', 'date3', 'date4', 'date5', 'date6', 'date7'];
+			var impdata = new Array();
+
+			mui.init();
+
+			window.onload = function() {
+				try {
+					refreshArgs();
+					refreshTopbar();
+					requestList();
+
+				} catch(e) {
+					console.log(e);
+				}
+			};
+
+			function refreshArgs() {
+				// 初如化二维数组
+				for(var i = 0; i < title.length; i++) {
+					impdata[i] = new Array();
+					for(var j = 0; j < typeName.length; j++) {
+						impdata[i][j] = [];
+					}
+				} // end
+			}
+
+			function refreshTopbar() {
+				var topbar = document.getElementById('topbar');
+				// 首先清空下面的所有结点
+				while(topbar.hasChildNodes()) {
+					topbar.removeChild(topbar.firstChild);
+				}
+
+				// 开始添加新的节点
+				var fragment = document.createDocumentFragment();
+				for(var i = 0; i < title.length; i++) {
+					var a = document.createElement('a');
+					a.style.width = (100 / title.length + "%");
+					if(i == 0) {
+						a.className = "mui-control-item mui-active";
+					} else {
+						a.className = "mui-control-item";
+					}
+					a.href = "#item1mobile";
+					var url = 'ktzllfx_sub_' + (i + 1) + '.html';
+					a.setAttribute('data-wid', url);
+					a.innerText = title[i];
+					fragment.appendChild(a);
+				}
+				topbar.appendChild(fragment);
+			}; // end
+
+			mui.back = function() {
+				var _self = plus.webview.currentWebview();
+				_self.close("auto");
+			};
+
+			function requestList() {
+				checkNetwork();
+
+				mui.plusReady(function() {
+					plus.nativeUI.showWaiting("正在加载..."); //这里是开始显示原生等待框
+				});
+
+				var currentPage = 1; // 当前页码
+				var totalRecord = 0; // 数据总条数
+				var totalPages = 1; // 总页数
+
+				var self = plus.webview.currentWebview();
+				var where = self.where;
+
+				var httpstr = HOST + 'airconditioner/listCool?province=' + where['province'] + '&city=' + where['city'] + '&data_date_fmt=' + where["data_date_fmt"] + '&device_no=' + where['device_no'];
+
+				mui.ajax(httpstr, {
+					type: 'get',
+					dataType: 'JSON',
+					timeout: 20000,
+					processData: true,
+					headers: {
+						'Content-Type': 'application/json;charset=UTF-8'
+					},
+					success: function(data) {
+						//console.log(data);
+						resp = JSON.parse(data);
+
+						responseList(resp);
+					},
+					error: function(xhr, type, errorThrown) {
+						mui.alert(getHttpErrorDesp(type), "提示", null);
+
+						mui.plusReady(function() {
+							plus.nativeUI.closeWaiting();
+						});
+					}
+				});
+
+			};
+
+			function responseList(resp) {
+				totalRecord = resp.records;
+				totalPages = Math.ceil(totalRecord / PAGE_SIZE);
+
+				// 整理数据
+				for(var i = 0; i < typeName.length; i++) {
+					var data = resp.data[lineType[i]];
+					console.log(data.length);
+					if(data.length == 0)
+						continue;
+
+					for(var j = 0; j < data.length; j++) {
+						for(var k = 0; k < title.length; k++) {
+							impdata[k][i].push({
+								name: Math.random(),
+								value: [data[j].datevalue, data[j][typeProperty[k]]]
+							});
+
+						}
+
+					}
+				} // end
+
+				mui.plusReady(function() {
+					var items = new Array();
+					for(var i = 0; i < title.length; i++) {
+						var url = 'ktzllfx_sub_' + (i + 1) + '.html';
+						items.push({
+							id: url,
+							url: url,
+							extras: {
+								title: title[i],
+								data: impdata[i]
+							}
+						})
+					};
+
+					var self = plus.webview.currentWebview();
+					var group = new webviewGroup(self.id, {
+						items: items,
+						onChange: function(obj) {
+							var c = document.querySelector(".mui-control-item.mui-active");
+							if(c) {
+								c.classList.remove("mui-active");
+							}
+							document.querySelector(".mui-scroll .mui-control-item:nth-child(" + (parseInt(obj.index) + 1) + ")").classList.add("mui-active");
+						}
+					});
+
+					mui(".mui-scroll").on("tap", ".mui-control-item", function(e) {
+						var wid = this.getAttribute("data-wid");
+						group.switchTab(wid);
+					});
+
+				});
+			};
+		</script>
+	</body>
+
+</html>

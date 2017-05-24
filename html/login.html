@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 	<head>
 		<meta charset="UTF-8" />
 		<title>机房温度智能分析平台</title>
@@ -53,6 +54,10 @@
 
 		<script>
 			mui.init();
+
+			mui.plusReady(function() {
+				plus.screen.lockOrientation('landscape');
+			});
 
 			var username = document.getElementById('username');
 			var password = document.getElementById('password');

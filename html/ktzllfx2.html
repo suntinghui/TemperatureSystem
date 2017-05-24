@@ -11,7 +11,7 @@
 		<style>
 			.chart {
 				width: 100%;
-				height: 400px;
+				height: 580px;
 				margin-top: 20px;
 				margin-bottom: 20px;
 			}
@@ -113,8 +113,9 @@
 						for(var j = 0; j < typeName.length; j++) {
 							impdata[i][j] = [];
 						}
-					}
+					} // end 
 
+					// 整理数据
 					for(var i = 0; i < typeName.length; i++) {
 						var data = resp.data[lineType[i]];
 						console.log(data.length);
@@ -131,7 +132,7 @@
 							}
 
 						}
-					}
+					} // end
 
 					for(var x = 0; x < title.length; x++) {
 						var series = new Array();
