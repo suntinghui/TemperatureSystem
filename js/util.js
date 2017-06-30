@@ -40,7 +40,7 @@ function backAction() {
 function getHttpErrorDesp(type) {
 	var desp = '未知异常,请重试';
 	if(type == 'timeout') {
-		desp = '网络请求超进,请重试';
+		desp = '网络请求超时,请重试';
 	} else if(type == 'error') {
 		desp = '请求出错,请稍候再试';
 	} else if(type == 'abort') {
